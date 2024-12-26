@@ -53,10 +53,10 @@ with st.sidebar:
 
     expender_cont = st.container()
     with expender_cont.expander("Model", expanded=False):
-        max_new_tokens = st.slider("Max new tokens", 512, 2048, 1024, step=1),
-        temperature = st.slider("Temperature", 0.0, 1.0, 0.5, step=0.1),
-        top_k = st.slider("Top K", 1, 50, 10, step=1),
-        top_p = st.slider("Top P", 0.0, 1.0, 0.95, step=0.01),
+        max_new_tokens = st.slider("Max new tokens", 512, 2048, 1024, step=1)
+        temperature = st.slider("Temperature", 0.0, 1.0, 0.5, step=0.1)
+        top_k = st.slider("Top K", 1, 50, 10, step=1)
+        top_p = st.slider("Top P", 0.0, 1.0, 0.95, step=0.01)
         repetition_penalty = st.slider("Repetition Penalty", 1.0, 2.0, 1.03, step=0.01)
 
     expender_cont = st.container()
@@ -104,7 +104,8 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
         docs = ''
         reference_text = ''
         if selected_option and rag_on:               
-            retrieved_res = retrieve(selected_option, user_prompt, 0, 3)
+            retrieved_res = retrieve(selected_option, user_prompt, search_threshold, search_range)
+ 
  
  
             if retrieved_res.status_code == 200:
@@ -113,7 +114,7 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
                 retrieved_res = []
             #print(retrieved_res)
             from dependency.rerank import reranking
-            retrieved_res = reranking(user_prompt, retrieved_res, 0, 3)
+            retrieved_res = reranking(user_prompt, retrieved_res, rerank_threshold, rerank_range)
  
             with st.expander("References"):
                 if retrieved_res:
@@ -137,16 +138,19 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
         #prompt = {'inputs' : prompt}
         st.session_state.messages.append({'role': 'user', 'content': user_prompt})
         
+        target_parameter = {
+                        'max_new_tokens' : max_new_tokens,
+                        'temperature' : temperature,
+                        'top_k' : top_k,
+                        'top_p' : top_p,
+                        'repetition_penalty' : repetition_penalty
+                    }
+        #print(target_parameter)
+        
         from dependency.class_def import Query
         query = Query(
                     inputs = prompt,
-                    parameters = {
-                        'max_new_tokens' : max_new_tokens[0],
-                        'temperature' : temperature[0],
-                        'top_k' : top_k[0],
-                        'top_p' : top_p[0],
-                        'repetition_penalty' : repetition_penalty
-                    }
+                    parameters = target_parameter,
                 )
         with requests.post("http://localhost:8001/gen", data=json.dumps(query.model_dump(), ensure_ascii=False), headers=headers,
                             stream=True) as response:        
@@ -161,4 +165,4 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
                 message_placeholder.markdown(full_response + '● ')
             message_placeholder.markdown(full_response)
             st.session_state.messages.append({'role': 'assistant', 'content': full_response, 'reference' : reference_text})
-        print(st.session_state.messages)
+        #print(st.session_state.messages)
