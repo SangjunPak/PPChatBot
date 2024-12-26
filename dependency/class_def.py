@@ -33,4 +33,4 @@ class VectorSearchRequest(BaseModel):
 class IndexSchema(BaseModel):
     index_name: str
     mappings: dict
-    settings: dict = None
+    settings: dict = None 

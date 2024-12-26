@@ -14,7 +14,7 @@ def reranking(user_prompt, passages, threshold, top_k):
                         headers=headers) as response:
          
         reranking_scores = response.json()['predictions']
-    print(reranking_scores)
+    #print(reranking_scores)
     for idx, reranking_score in enumerate(reranking_scores):
         passages[idx]['source']['rerank_score'] = reranking_score
      

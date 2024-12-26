@@ -21,4 +21,4 @@ if __name__ == '__main__':
     # Embedding 객체에서 임베딩 벡터만 추출하여 리스트로 변환
     embedding_list = [embed for embed in embedding(texts)]
     print(embedding_list)
-    print(len(embedding_list[0]))
+    #print(len(embedding_list[0]))

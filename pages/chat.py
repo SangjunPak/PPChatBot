@@ -4,7 +4,7 @@ import os
 import requests
 import streamlit as st
 from dotenv import load_dotenv
-from dependency.prompt import llm_query
+from dependency.prompt import llm_query, system_prompt, base_prompt_rag, base_prompt, llm_query_rag
 
 from dependency.elastic import get_all_index
 
@@ -45,7 +45,7 @@ with st.sidebar:
     rag_on = st.toggle("지식 기반 검색")
 
     expender_cont = st.container()
-    with expender_cont.expander('retrieve', expanded=False):
+    with expender_cont.expander('Retrieve', expanded=False):
         search_range = st.slider("retrieve 개수", 1, 50, 3)
         rerank_range = st.slider("reranking 개수", 1, 10, 3)
         search_threshold = st.slider("retrieve threshold", 0.0, 1.0, 0.1, step=0.1)
@@ -59,6 +59,18 @@ with st.sidebar:
         top_p = st.slider("Top P", 0.0, 1.0, 0.95, step=0.01),
         repetition_penalty = st.slider("Repetition Penalty", 1.0, 2.0, 1.03, step=0.01)
 
+    expender_cont = st.container()
+    with expender_cont.expander("Prompt", expanded=False):
+        _system_prompt = st.text_area(label="System Prompt",
+                                        height=300,
+                                        value=system_prompt)
+        _base_prompt_rag = st.text_area(label="Base Prompt with RAG",
+                                        height=300,
+                                        value=base_prompt_rag)
+        _base_prompt = st.text_area(label="Base Prompt",
+                                    height=300,
+                                    value=base_prompt)
+            
 if 'messages' not in st.session_state:
     st.session_state.messages = []
    
@@ -118,14 +130,13 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
                         reference_text += sr_text
                 st.markdown(reference_text)
             # 실습코드 작성하여, prompt 생성하기
-            docs = rag_query(retrieved_res)
-            prompt = llm_query_rag(st.session_state.messages, docs, user_prompt)
+            rag_docs = rag_query(retrieved_res)
+            prompt = llm_query_rag(st.session_state.messages, rag_docs, user_prompt, _system_prompt,  _base_prompt_rag)
         else:
-            prompt = llm_query(st.session_state.messages, user_prompt)
-        prompt = {'inputs' : prompt}
+            prompt = llm_query(st.session_state.messages, user_prompt, _system_prompt, _base_prompt)
+        #prompt = {'inputs' : prompt}
         st.session_state.messages.append({'role': 'user', 'content': user_prompt})
         
-
         from dependency.class_def import Query
         query = Query(
                     inputs = prompt,
