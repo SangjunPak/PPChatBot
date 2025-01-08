@@ -33,7 +33,7 @@ if 'images' not in st.session_state:
     st.session_state.images = []
  
 with st.form("이미지 생성", border=True, clear_on_submit=False):
-    diffusion_prompt = st.text_area('이미지 생성을 위한 프롬프트를 입력하세요.', height=100)
+    diffusion_prompt = st.text_area('이미지 생성을 위한 프롬프트를 입력하세요.', height=70)
     headers = {'Content-Type': 'application/json'}
     prompt = {
         'inputs': f'당신은 한국어를 영어로 번역하는 전문가입니다.\n 한국어 문장을 받으면 한국어 문장의 의미를 최대한 살려서 영어로 번역해고, 영어로만 답변해야합니다.\n ### 문장 : {diffusion_prompt}\n ### 답변 :',
@@ -59,7 +59,7 @@ with st.form("이미지 생성", border=True, clear_on_submit=False):
                     "n_steps": _n_times
                 }
             }
-            prompt['inputs'] = f'make suitable short filename that describes {eng_prompt} within 20 bytes. Answer should be only filename, not including any explanations, extensions, A: like answer marks'
+            prompt['inputs'] = f'make suitable short filename that describes {eng_prompt} within 20 bytes. Answer should be only a filename, not including any explanations, extensions, A: like answer marks'
             with requests.post("http://sr-llm-65b-instruct.serving.70-220-152-1.sslip.io", data=json.dumps(prompt),
                             headers=headers) as response:
                 filename_prompt = ''  
@@ -68,8 +68,13 @@ with st.form("이미지 생성", border=True, clear_on_submit=False):
 
                 with requests.post(IMAGE_DIFF_ENDPOINT, data=json.dumps(raw), headers=headers) as response:
                     if response.ok:
-                        image_name = filename_prompt.replace('A:','').replace('"','').replace('\n','').replace('.jpg','') #uuid.uuid4()
-                        print(image_name)
+                        ori_name = filename_prompt
+                        image_name = filename_prompt.replace('A: ','').replace('"','').replace('\n','').replace('.jpg','').replace(', etc.','') #uuid.uuid4()
+                        print(f"image_name:{image_name}")
+                        for data in st.session_state.images:
+                            print(data['filename'])
+                            if (data['filename'] == image_name):
+                                image_name += "_1"
                         output_image = response.content
                         with open(f"./files/images/{image_name}.png", "wb") as f:
                             f.write(output_image)
