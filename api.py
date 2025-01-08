@@ -30,7 +30,7 @@ user = os.getenv('user')
 password = os.getenv('password')
  
 es = Elasticsearch(hosts=['https://localhost:9200'],
-                   http_auth=(user, password),
+                   basic_auth=(user, password),
                    verify_certs=False)
 
 @app.get("/home")
