@@ -27,7 +27,7 @@ with st.sidebar:
  
     expender_cont = st.container()
     with expender_cont.expander("n times 설정", expanded=False):
-        _n_times = st.slider("n_times", 1, 10000, 40)
+        _n_times = st.slider("n_times", 1, 1000, 30)
  
 if 'images' not in st.session_state:
     st.session_state.images = []
@@ -59,7 +59,7 @@ with st.form("이미지 생성", border=True, clear_on_submit=False):
                     "n_steps": _n_times
                 }
             }
-            prompt['inputs'] = f'make suitable short filename that describes {eng_prompt} within 20 bytes. Answer should be only a filename, not including any explanations, extensions, A: like answer marks'
+            prompt['inputs'] = f'make suitable short filename that describes {eng_prompt} within 30 bytes. Answer should be only a filename, not including any explanations, extensions, A: like answer marks'
             with requests.post("http://sr-llm-65b-instruct.serving.70-220-152-1.sslip.io", data=json.dumps(prompt),
                             headers=headers) as response:
                 filename_prompt = ''  
@@ -70,6 +70,7 @@ with st.form("이미지 생성", border=True, clear_on_submit=False):
                     if response.ok:
                         ori_name = filename_prompt
                         image_name = filename_prompt.replace('A: ','').replace('"','').replace('\n','').replace('.jpg','').replace(', etc.','') #uuid.uuid4()
+                        # image_name = image_name[:30]
                         print(f"image_name:{image_name}")
                         for data in st.session_state.images:
                             print(data['filename'])

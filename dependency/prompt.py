@@ -4,7 +4,7 @@ from datetime import datetime
 import pytz
 date_now = datetime.now(pytz.timezone('Asia/Seoul')).strftime('%Y-%m-%d %H:%M:%S')
  
-system_prompt = '''Gauss는 삼성전자의 삼성 리서치(Samsung Research)에서 만들고 있는 대규모 언어 모델(Large Language Model) 기반 생성형 AI 인공지능 비서이다.
+system_prompt_gauss = '''Gauss는 삼성전자의 삼성 리서치(Samsung Research)에서 만들고 있는 대규모 언어 모델(Large Language Model) 기반 생성형 AI 인공지능 비서이다.
 Gauss는 머신 러닝과 AI의 근본이 되는 정규분포 이론을 정립한 정립한 수학자 카를 프리드리히 가우스의 이름에서 따왔으며, Generative AI Universe of Samsung의 줄임말이기도 하다.
 Gauss는 생성형 AI 모델에 세상의 모든 현상과 지식을 담겠다는 의미를 가지고 있으며, 삼성의 생성형 AI 세계관을 표현한다.
 Gauss는 사용자의 업무를 도와주기 위해 최선을 다하는 인공지능 비서이며 대화를 통해 사용자에게 다양한 도움을 준다.
@@ -193,6 +193,16 @@ base_prompt_rag_code = '''#### **Converstation history**:
 #### **Answer**:
 '''
 
+# system_prompt = '''
+#     최대한 친절하게 답해야 합니다. 
+#     답변은 마크다운 형식으로 작성해야 합니다. 
+#     질문에 대한 답변이 참고 자료에 없는 경우, '참고 자료에서 찾을 수 없습니다.' 라고 답변해야 합니다. 
+#     대화 내역과 참고 자료를 바탕으로 질문에 대한 정확성, 관련성, 신뢰성을 종합적으로 고려하여 필요한 대답만 해야 합니다. 
+#     현재 시각은 {date} 입니다.
+# '''
+
+system_prompt = "답변은 늘 한글로 해주세요. 현재 시각은 {date} 입니다."
+
 def rag_query(passages):
     context = ''
     if not passages:
@@ -213,14 +223,14 @@ def llm_query(messages, user_prompt, _system_prompt, _base_prompt):
             message_format += '[{{<(User)>}}]\n'
             message_format += f"{message['content']}"
         elif message['role'] == 'assistant':
-            message_format += '[{{<(Gauss)>}}]\n'
+            message_format += '[{{<(Assistant)>}}]\n'
             message_format += f"{message['content']}"
             message_format += '<|endoftext|>'
         history += message_format + '\n'
  
     prompt = _system_prompt.format(date=date_now) + _base_prompt.format(history=history,
                                                                         user_prompt=user_prompt
-                                                                        ) + '\n[{{<(Gauss)>}}]\n'
+                                                                        ) + '\n[{{<(Assistant)>}}]\n'
  
     return prompt
  
@@ -234,7 +244,7 @@ def llm_query_rag(messages, docs, user_prompt, _system_prompt, _base_promp_rag):
             message_format += '[{{<(User)>}}]\n'
             message_format += f"{message['content']}"
         elif message['role'] == 'assistant':
-            message_format += '[{{<(Gauss)>}}]\n'
+            message_format += '[{{<(Assistant)>}}]\n'
             message_format += f"{message['content']}"
             message_format += '<|endoftext|>'
         history += message_format + '\n'
@@ -242,7 +252,7 @@ def llm_query_rag(messages, docs, user_prompt, _system_prompt, _base_promp_rag):
     prompt = _system_prompt.format(date=date_now) + _base_promp_rag.format(history=history,
                                                                            docs=docs,
                                                                            user_prompt=user_prompt
-                                                                           ) + '\n[{{<(Gauss)>}}]\n'
+                                                                           ) + '\n[{{<(Assistant)>}}]\n'
  
     return prompt
  

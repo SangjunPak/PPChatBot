@@ -10,7 +10,8 @@ from dependency.elastic import get_all_index
 
 load_dotenv(verbose=True)
 LLM_ENDPOINT = os.getenv('LLM_ENDPONT')
-   
+USE_RAG = os.getenv('USE_RAG') == 'True'
+
 st.set_page_config(
     page_title='PP chatbot',
     layout='wide',
@@ -27,23 +28,27 @@ with st.sidebar:
             st.session_state.messages = []
 
     collection_names = []
- 
-    try:
-        collection_info = get_all_index()
-        if collection_info['response'].status_code == 200:
-            for name in collection_info['message']['names']:
-                if (name[0] != '.'): collection_names.append(name) # = collection_info['message']['names']
-        else:
-            st.error(collection_info['message'])
- 
-    except Exception as e:
-        st.error(f"실행 중 오류가 발생했습니다. {e}")
- 
-    selected_option = st.selectbox('index를 선택하세요', collection_names, placeholder='index를 선택하세요.',
-                                   label_visibility='visible')
 
-    rag_on = st.toggle("지식 기반 검색")
+    if USE_RAG: 
+        try:
+            collection_info = get_all_index()
+            if collection_info['response'].status_code == 200:
+                for name in collection_info['message']['names']:
+                    if (name[0] != '.'): collection_names.append(name) # = collection_info['message']['names']
+            else:
+                st.error(collection_info['message'])
+    
+        except Exception as e:
+            st.error(f"실행 중 오류가 발생했습니다. {e}")
+    
+        selected_option = st.selectbox('index를 선택하세요', collection_names, placeholder='index를 선택하세요.',
+                                    label_visibility='visible')
 
+        rag_on = st.toggle("지식 기반 검색")
+    else:
+        selected_option = None
+        rag_on = False
+    
     expender_cont = st.container()
     with expender_cont.expander('Retrieve', expanded=False):
         search_range = st.slider("retrieve 개수", 1, 50, 3)
@@ -105,9 +110,7 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
         reference_text = ''
         if selected_option and rag_on:               
             retrieved_res = retrieve(selected_option, user_prompt, search_threshold, search_range)
- 
- 
- 
+  
             if retrieved_res.status_code == 200:
                 retrieved_res = retrieved_res.json()['results']
             else:
@@ -139,13 +142,13 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
         st.session_state.messages.append({'role': 'user', 'content': user_prompt})
         
         target_parameter = {
-                        'max_new_tokens' : max_new_tokens,
+                        'max_tokens' : max_new_tokens,
                         'temperature' : temperature,
                         'top_k' : top_k,
                         'top_p' : top_p,
                         'repetition_penalty' : repetition_penalty
                     }
-        #print(target_parameter)
+        #print(prompt)
         
         from dependency.class_def import Query
         query = Query(
@@ -158,11 +161,31 @@ if user_prompt := st.chat_input('챗봇에게 물어보세요.'):
                 # bytes 데이터를 문자열로 디코딩
                 string_data = chunk_info.decode("utf-8")
                 # 문자열을 JSON으로 변환
-                json_data = json.loads(string_data[5:])
-                text = json_data['token']['text']
-                if text != '<|endoftext|>':
-                    full_response += text
-                message_placeholder.markdown(full_response + '● ')
+                #print(string_data)
+
+                current_event = None
+                line_str = string_data[6:]
+                if line_str.startswith('event'):
+                    current_event = line_str[7:]
+                elif line_str.startswith('data'):
+                    data_str = line_str[6:]
+                    #print(data_str)
+                    if data_str.strip() != '':
+                        try:
+                            data = json.loads(data_str)
+                            #print(current_event, data['delta'])
+
+                            if 'delta' in data and data['delta'].get('type') == 'text_delta':
+                                text = data['delta'].get('text', '')
+                                full_response += text
+                                message_placeholder.markdown(full_response + '● ')
+                            elif current_event == 'message_stop':
+                                break
+                        except json.JSONDecodeError:
+                            continue
+                else:
+                    print(line_str, line_str.startswith('event'), line_str.startswith('data'))
+
             message_placeholder.markdown(full_response)
             st.session_state.messages.append({'role': 'assistant', 'content': full_response, 'reference' : reference_text})
         #print(st.session_state.messages)

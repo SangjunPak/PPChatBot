@@ -23,7 +23,9 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv(verbose=True)
 LLM_ENDPOINT = os.getenv('LLM_ENDPONT')
- 
+MODEL = os.getenv('MODEL')
+LM_API_TOKEN = os.getenv('LM_API_TOKEN')
+
 app = FastAPI()
  
 user = os.getenv('user')
@@ -44,30 +46,26 @@ async def get_llm(prompt: Query):
  
 
 def llm_streaming(prompt: Query):
-    headers = {"Content-Type": "application/json"}
-    raw = {
-        "inputs": prompt.inputs,
-        "parameters": {
-            "best_of": 1,
-            "do_sample": True,
-            "max_new_tokens": prompt.parameters['max_new_tokens'],
-            "repetition_penalty": prompt.parameters['repetition_penalty'],
-            "return_full_text": False,
-            "stop": ['<|endoftext|>'],
-            "temperature": prompt.parameters['temperature'],
-            "top_k": prompt.parameters['top_k'],
-            "top_p": prompt.parameters['top_p'],
-            "watermark": False
-        }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {LM_API_TOKEN}"
     }
- 
-    with requests.post(LLM_ENDPOINT, data=json.dumps(raw), headers=headers, stream=True) as response:
-        for chunk_info in response.iter_content(chunk_size=None):
-            if chunk_info:
-                try:
-                    yield chunk_info
-                except:
-                    yield ""
+    raw = {
+        "model": f"{MODEL}",
+        "messages": [
+            {"role": "user", "content": prompt.inputs}
+        ],
+        "temperature": prompt.parameters['temperature'],
+        "max_tokens": prompt.parameters['max_tokens'],
+        "stream": True
+    }
+    try:
+        response = requests.post(LLM_ENDPOINT, headers=headers, json=raw, stream=True)
+        for line in response.iter_lines():
+            if line:
+                yield f"data: {line.decode('utf-8')}\n\n"
+    except Exception as e:
+        yield f"data: {{\"error\": \"{str(e)}\"}}\n\n"
 
 @app.get("/")
 async def root():
