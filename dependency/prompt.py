@@ -62,7 +62,7 @@ base_prompt_rag = '''1) 대화내역과 참고 자료를 자세히 읽고 다음
  
 답변: <참고 자료만 사용해서 질문에 맞게 주제, 내용, 구조를 파악하여 질문에 대한 필요한 답변을 마크다운형식으로 생성>'''
  
-base_prompt = '''1) 대화내역을 자세히 읽고 다음의 제시된 질문에 답변을 선택해 주세요.
+base_prompt_gauss = '''1) 대화내역을 자세히 읽고 다음의 제시된 질문에 답변을 선택해 주세요.
 2) 제시된 정보만 활용해서 질문과 정확성, 관련성, 신뢰성을 종합적으로 고려하여 필요한 대답만 해야 합니다.
  
 대화 내역:
@@ -202,6 +202,13 @@ base_prompt_rag_code = '''#### **Converstation history**:
 # '''
 
 system_prompt = "답변은 늘 한글로 해주세요. 현재 시각은 {date} 입니다."
+base_prompt = '''
+대화 내역:
+{history}
+ 
+질문:
+{user_prompt}
+'''
 
 def rag_query(passages):
     context = ''
