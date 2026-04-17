@@ -1,8 +1,16 @@
 # PPChatBot
 교육용 RAG베이스의 챗봇
 
+## 실행환경
+lmstudio 설치 후에, gemma4-e4b 등 언어모델을 다운로드받아 설치한다. (코드내에 .env 에서 model과 endpoint수정가능)
+Delevoper탭에서 Local Server에서 Status를 Running 으로 돌려서 서버를 실행시켜 놓는다.
+<img width="1114" height="179" alt="image" src="https://github.com/user-attachments/assets/1f972f37-04d8-4690-8905-954ced949e6b" />
+
+코드는 Developer Docs에서 Anthropic Compatible Endpoints를 사용했다.
+<img width="958" height="321" alt="image" src="https://github.com/user-attachments/assets/369dae85-a549-476e-bf92-7442f5abfc9b" />
+
 ## 실행방법
 개발유연성을 위해 stream api 와 streamlit 을 분리했기 때문에
-a.bat 로 fastapi 서버를 실행시켜준 다음에
-s.bat 로 streamlit 을 실행해주면 된다. 
+한 터미널에서 a.bat 로 fastapi 서버를 실행시켜준 다음에
+다른 터미널에서 s.bat 로 streamlit 을 실행해주면 된다. 
 
